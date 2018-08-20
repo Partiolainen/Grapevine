@@ -2,12 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>4.1.1.1</Version>
+    <Version>4.1.1.2</Version>
     <Authors>Scott Offen / Partiolainen</Authors>
     <Company>Part</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/Partiolainen/Grapevine</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Partiolainen/Grapevine</RepositoryUrl>
+    <Description>The embeddable, unopinionated minimalist rest framework for .NET</Description>
+    <AssemblyVersion>4.1.1.2</AssemblyVersion>
+    <FileVersion>4.1.1.2</FileVersion>
+    <PackageTags>rest, server, api, router, client, web, json, http, express, xml, embedded</PackageTags>
+    <PackageReleaseNotes>Creating a REST server should be simple.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
