@@ -188,3 +188,4 @@ FakesAssemblies/
 
 # Nuget Packages
 *.nupkg
+/src/.vs/Grapevine/v15/Server/sqlite3
