@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Grapevine.Interfaces.Shared;
@@ -143,7 +144,15 @@ namespace Grapevine.Server
             foreach (
                 var assembly in
                     AppDomain.CurrentDomain.GetAssemblies()
-                        .Where(a => !a.GlobalAssemblyCache && a.GetName().Name != "Grapevine" && !a.GetName().Name.StartsWith("vshost"))
+                        .Where(a => !a.GlobalAssemblyCache
+                            && a.GetName().Name != "Grapevine"
+                            && !a.GetName().Name.StartsWith("vshost")
+                            && !a.GetName().Name.StartsWith("xunit")
+                            && !a.GetName().Name.StartsWith("Shouldly")
+                        )
+#if NETSTANDARD
+                        .Where(x => !x.GetName().Name.Contains("TestPlatform"))
+#endif
                         .OrderBy(a => a.FullName))
             {Assemblies.Add(assembly);}
         }
@@ -152,7 +161,12 @@ namespace Grapevine.Server
         {
             Logger = NullLogger.GetInstance();
 
-            _excludedNamespaces = new List<string>();
+            _excludedNamespaces = new List<string>()
+            {
+#if NETSTANDARD
+                "Microsoft.VisualStudio.TestPlatform.ObjectModel"
+#endif
+            };
             _includedNamespaces = new List<string>();
 
             _excludedTypes = new List<Type>();
@@ -255,10 +269,23 @@ namespace Grapevine.Server
 
             Logger.Trace("Scanning resources for routes...");
 
-            foreach (var assembly in Assemblies)
+            try
             {
-                if (IsExcluded(assembly) || !IsIncluded(assembly)) continue;
-                routes.AddRange(ScanAssembly(assembly));
+                foreach (var assembly in Assemblies)
+                {
+                    if (IsExcluded(assembly) || !IsIncluded(assembly)) continue;
+                    routes.AddRange(ScanAssembly(assembly));
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                foreach (var loaderEx in ex.LoaderExceptions)
+                {
+                    Debug.WriteLine(loaderEx);
+                    Console.WriteLine(loaderEx);
+                    Logger.Debug("Loader Exception:", loaderEx);
+                }
+                throw;
             }
 
             return routes;
@@ -275,10 +302,24 @@ namespace Grapevine.Server
 
             Logger.Trace($"Generating routes for assembly {assembly.GetName().Name}");
 
-            foreach (var type in assembly.GetTypes().Where(t => t.IsRestResource()).OrderBy(m => m.Name))
+            try
             {
-                if (IsExcluded(type) || !IsIncluded(type)) continue;
-                routes.AddRange(ScanType(type, basePath));
+                foreach (var type in assembly.GetTypes().Where(t => t.IsRestResource()).OrderBy(m => m.Name))
+                {
+                    if (IsExcluded(type) || !IsIncluded(type)) continue;
+                    routes.AddRange(ScanType(type, basePath));
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                foreach (var loaderEx in ex.LoaderExceptions)
+                {
+                    Debug.WriteLine(loaderEx);
+                    Console.WriteLine(loaderEx);
+                    Logger.Debug("Loader Exception:", loaderEx);
+                }
+
+                throw;
             }
 
             return routes;
